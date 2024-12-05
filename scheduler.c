@@ -7,8 +7,7 @@ uint8_t next_task_num = 1;
 
 volatile unsigned long int *current_pc;
 volatile unsigned long int *current_sp;
-volatile unsigned long int *psp_value; // A variable to store the PSP
-
+volatile unsigned long int *psp_value;
 
 void enable_interrupts()
 {
@@ -24,7 +23,7 @@ void disable_interrupts()
 
 void trigger_pendSV(void)
 {
-    __asm volatile(".thumb");                                        //Set to thumb mode explicitly
+    __asm volatile(".thumb");                                       //Set to thumb mode explicitly
 
     __asm volatile("LDR     r0, =0xE000ED04\n");                    // Load the address of ICSR into R0
     __asm volatile("LDR     r1, [r0]\n");                           // Load the current value of ICSR into R1
@@ -43,9 +42,9 @@ void start_scheduler(void *task)
     
     disable_interrupts();
 
-    __asm volatile("MSR PSP, %0" : : "r" (_psp));    // Set PSP to the address of the task's stack
-    __asm volatile("MRS R1, CONTROL");               //Storing CONTROL register values to R0
-    __asm volatile("ORR R1, R1, #2");                //Setting SPSEL to 1 to use PSP instead of MSP
+    __asm volatile("MSR PSP, %0" : : "r" (_psp));                   // Set PSP to the address of the task's stack
+    __asm volatile("MRS R1, CONTROL");                              //Storing CONTROL register values to R0
+    __asm volatile("ORR R1, R1, #2");                               //Setting SPSEL to 1 to use PSP instead of MSP
     __asm volatile("MSR CONTROL, R1");
     enable_interrupts();
     __asm volatile("BX R0");
@@ -65,26 +64,26 @@ void create_task(void* task)
     if(task_count < (MAX_TASK_COUNT - 1))
     {
         __psp = (unsigned long int *)&TCB[task_count + 1].stack;
-        --__psp;//TO move PSP to teh beginning of stack
-        --__psp;//TO move PSP to teh beginning of stack
+        --__psp;                                                        //To move PSP to the beginning of stack
+        --__psp;                                                        //To move PSP to the beginning of stack
 
         *(--__psp) = (1U << 24);                                        //Set thumb bit of XPSR;
         *(--__psp) = (unsigned long int*)task;                          //Setting the PC 
         *(--__psp) = 0xFFFFFFFDu;                                       //Loading LR with EXC_RETURN to return to Thread using PSP 
 
-        *(--__psp) = 0x12121212u; // Dummy R12
-        *(--__psp) = 0x03030303u; // Dummy R3
-        *(--__psp) = 0x02020202u; // Dummy R2
-        *(--__psp) = 0x01010101u; // Dummy R1
-        *(--__psp) = 0x00000000u; // Dummy R0
-        *(--__psp) = 0x11111111u; // Dummy R11
-        *(--__psp) = 0x10101010u; // Dummy R10
-        *(--__psp) = 0x09090909u; // Dummy R9
-        *(--__psp) = 0x08080808u; // Dummy R8
-        *(--__psp) = 0x07070707u; // Dummy R7
-        *(--__psp) = 0x06060606u; // Dummy R6
-        *(--__psp) = 0x05050505u; // Dummy R5
-        *(--__psp) = 0x04040404u; // Dummy R4
+        *(--__psp) = 0x12121212u;                                       // Dummy R12
+        *(--__psp) = 0x03030303u;                                       // Dummy R3
+        *(--__psp) = 0x02020202u;                                       // Dummy R2
+        *(--__psp) = 0x01010101u;                                       // Dummy R1
+        *(--__psp) = 0x00000000u;                                       // Dummy R0
+        *(--__psp) = 0x11111111u;                                       // Dummy R11
+        *(--__psp) = 0x10101010u;                                       // Dummy R10
+        *(--__psp) = 0x09090909u;                                       // Dummy R9
+        *(--__psp) = 0x08080808u;                                       // Dummy R8
+        *(--__psp) = 0x07070707u;                                       // Dummy R7
+        *(--__psp) = 0x06060606u;                                       // Dummy R6
+        *(--__psp) = 0x05050505u;                                       // Dummy R5
+        *(--__psp) = 0x04040404u;                                       // Dummy R4
         
         TCB[task_count]._sp = __psp;
         task_count++;
@@ -94,7 +93,6 @@ void create_task(void* task)
 
 void pendSV_handler()
 {
-    // disable_interrupts();
     __asm volatile("CPSID I");
     __asm volatile("PUSH {LR}");                                        //Saving PR in the main stack to use this to exit 
     __asm volatile("mrs r0, PSP");                                      //Getting current PSP
@@ -107,7 +105,7 @@ void pendSV_handler()
     }
     else
     {
-        // __asm volatile(".thumb");                                     //Set to thumb mode explicitly
+        __asm volatile(".thumb");                                       //Set to thumb mode explicitly
         __asm volatile(
             // "MRS r0, PSP\n"                                          // Move the value of MSP into register r0
             "MOV %0, r0"                                                // Move the value of r0 (MSP) to the C variable psp_value
@@ -120,14 +118,14 @@ void pendSV_handler()
         current_task_num = (current_task_num + 1) % task_count;
         current_sp = TCB[current_task_num]._sp;                         //Storing the new task's stack pointer to current_sp variable
 
-        __asm volatile("ldr r1, =current_sp");                           // Load the address of current_sp into r1
-        __asm volatile("ldr r0, [r1]");                                  // Dereference current_sp and load the value into r0; i.e. psp is loaded into the r0 register
-        __asm volatile("msr PSP, r0");                                   //Loaded PSP with r0
+        __asm volatile("ldr r1, =current_sp");                          // Load the address of current_sp into r1
+        __asm volatile("ldr r0, [r1]");                                 // Dereference current_sp and load the value into r0; i.e. psp is loaded into the r0 register
+        __asm volatile("msr PSP, r0");                                  //Loaded PSP with r0
 
-        __asm volatile("ldmia.w	r0!, {r4-r11}");                         //Load  registers from the PSP stack (r4 to r11)
-        __asm volatile("msr PSP, r0");                                   //Loaded PSP with r0              
+        __asm volatile("ldmia.w	r0!, {r4-r11}");                        //Load  registers from the PSP stack (r4 to r11)
+        __asm volatile("msr PSP, r0");                                  //Loaded PSP with r0              
         __asm volatile("POP {LR}");
-    	__asm volatile("CPSIE I");                                       //Enabling interrupt
+    	__asm volatile("CPSIE I");                                      //Enabling interrupt
         __asm volatile("bx	lr");
     }
 }

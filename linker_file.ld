@@ -35,7 +35,6 @@ SECTIONS{
         *(.bss*)
         _ram_bss_end = .;
     } > RAM AT > FLASH
-
 }
 
 

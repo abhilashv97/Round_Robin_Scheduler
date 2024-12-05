@@ -16,7 +16,7 @@ void blink1(void)
 {
     while (1)
     {
-        *GPIOA_ODR = *GPIOA_ODR | (1 << LED_PIN); // Turn on LED (assuming active high)
+        *GPIOA_ODR = *GPIOA_ODR | (1 << LED_PIN);                   // Turn ON LED
         for(char i = 0; i < 5; ++i);
     }    
 }
@@ -25,16 +25,16 @@ void blink2(void)
 {
     while(1)
     {
-        *GPIOA_ODR = *GPIOA_ODR & (~(1 << LED_PIN)); // Turn on LED (assuming active high)
+        *GPIOA_ODR = *GPIOA_ODR & (~(1 << LED_PIN));                // Turn OFF LED
         for(char i = 0; i < 5; ++i);
     }
 }
 
 void GPIO_Init(void)
 {
-    *AHB2ENR = *AHB2ENR | (0x01 << 0); // TO set only the GPIOA enable bit i.e bit 0.
-    *GPIOA_MODER = *GPIOA_MODER & (~(0x3 << (LED_PIN * 2))); //Reset the port
-    *GPIOA_MODER = *GPIOA_MODER | (0x01 << (LED_PIN * 2)); // Configuring pin 5 "General purpose output mode"    
+    *AHB2ENR = *AHB2ENR | (0x01 << 0);                              // TO set only the GPIOA enable bit i.e bit 0.
+    *GPIOA_MODER = *GPIOA_MODER & (~(0x3 << (LED_PIN * 2)));        //Reset the port
+    *GPIOA_MODER = *GPIOA_MODER | (0x01 << (LED_PIN * 2));          // Configuring pin 5 "General purpose output mode"    
     
     *STK_CTRL |= 0x00; 
     *STK_LOAD |= 0x0FFFFF; 
